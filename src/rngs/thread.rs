@@ -89,6 +89,38 @@ thread_local!(
     }
 );
 
+#[test]
+fn foo() {
+    use {RngCore, SeedableRng};
+    use rngs::EntropyRng;
+    use prng::hc128::Hc128Core;
+    use std::thread;
+    use os::OsRng;
+    use std::iter;
+
+    let mut buf: Vec<_> = iter::repeat(0).take(4096).collect();
+
+    thread::spawn(move || {
+        let mut rng = OsRng::new().expect("osrng");
+
+        loop {
+            let _ = rng.try_fill_bytes(&mut buf);
+            thread::yield_now();
+        }
+    });        
+
+    loop {
+        let mut entropy_source = EntropyRng::new();
+        let _r = Hc128Core::from_rng(&mut entropy_source).unwrap_or_else(|err| {
+            panic!("could not initialize thread_rng: {}", err)
+        });
+        /*let _rng = ReseedingRng::new(r,
+                                     THREAD_RNG_RESEED_THRESHOLD,
+                                     entropy_source);*/
+        thread::yield_now();
+    }
+}
+
 /// Retrieve the lazily-initialized thread-local random number
 /// generator, seeded by the system. Intended to be used in method
 /// chaining style, e.g. `thread_rng().gen::<i32>()`, or cached locally, e.g.

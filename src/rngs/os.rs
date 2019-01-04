@@ -343,7 +343,7 @@ mod imp {
 
     impl OsRngImpl for OsRng {
         fn new() -> Result<OsRng, Error> {
-            if is_getrandom_available() {
+            if false && is_getrandom_available() {
                 return Ok(OsRng { method: OsRngMethod::GetRandom,
                                   initialized: false });
             }
@@ -383,7 +383,7 @@ mod imp {
                     Ok(1)
                 }
             };
-            OS_RNG_INITIALIZED.store(true, Ordering::Relaxed);
+            //OS_RNG_INITIALIZED.store(true, Ordering::Relaxed);
             self.initialized = true;
             result
         }
