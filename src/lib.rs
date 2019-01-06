@@ -1212,3 +1212,32 @@ mod test {
                         rb.gen_ascii_chars().take(100)));
     }
 }
+
+#[test]
+fn foo() {
+    use {SeedableRng, StdRng};
+    use std::thread;
+    use os::OsRng;
+    use std::iter;
+
+    let mut buf: Vec<_> = iter::repeat(0).take(4096).collect();
+
+    thread::spawn(move || {
+        let mut rng = OsRng::new().expect("osrng");
+        loop {
+            rng.fill_bytes(&mut buf);
+            thread::yield_now();
+        }
+    });        
+
+    loop {
+        let r = match StdRng::new() {
+            Ok(r) => r,
+            Err(e) => panic!("No entropy available: {}", e),
+        };
+        let _rng = reseeding::ReseedingRng::new(r,
+                                               THREAD_RNG_RESEED_THRESHOLD,
+                                               ThreadRngReseeder);
+        thread::yield_now();
+    }
+}
